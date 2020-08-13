@@ -1,0 +1,283 @@
+definitions:
+  cerr.ErrorResponse:
+    properties:
+      code:
+        type: string
+      error:
+        type: string
+      ok:
+        type: boolean
+    type: object
+  controller.ListAreasResponseV1:
+    properties:
+      areas:
+        items:
+          $ref: '#/definitions/entity.Area'
+        type: array
+      ok:
+        type: boolean
+    type: object
+  controller.ListRobotsResponseV1:
+    properties:
+      ok:
+        type: boolean
+      robots:
+        items:
+          $ref: '#/definitions/entity.Robot'
+        type: array
+    type: object
+  controller.RobotHistoryResponseV1:
+    properties:
+      ok:
+        type: boolean
+      robot:
+        $ref: '#/definitions/entity.Robot'
+        type: object
+    type: object
+  entity.Area:
+    properties:
+      created_at:
+        type: string
+      dgraph.type:
+        items:
+          type: string
+        type: array
+      name:
+        description: Each cleaning area should definitely have a name to make reports
+          nicer.
+        type: string
+      passes_needed:
+        description: Number of grid square passes needed before the square can be
+          considered clean.
+        type: integer
+      size_x:
+        description: X side size in millimeters.
+        type: integer
+      size_y:
+        description: Y side size in millimeters.
+        type: integer
+      uid:
+        type: string
+    type: object
+  entity.CleaningArea:
+    properties:
+      created_at:
+        type: string
+      dgraph.type:
+        items:
+          type: string
+        type: array
+      grid:
+        description: The size of a grid square. Typically the same size os the diameter
+          of the assigned cleaning robot.
+        items:
+          $ref: '#/definitions/entity.Square'
+        type: array
+      name:
+        description: Each cleaning area should definitely have a name to make reports
+          nicer.
+        type: string
+      passes_needed:
+        description: Number of grid square passes needed before the square can be
+          considered clean.
+        type: integer
+      size_x:
+        description: X side size in millimeters.
+        type: integer
+      size_y:
+        description: Y side size in millimeters.
+        type: integer
+      uid:
+        type: string
+    type: object
+  entity.CleaningSession:
+    properties:
+      area:
+        items:
+          $ref: '#/definitions/entity.CleaningArea'
+        type: array
+      created_at:
+        type: string
+      dgraph.type:
+        items:
+          type: string
+        type: array
+      duration_sec:
+        type: integer
+      ended_at:
+        type: string
+      is_active:
+        type: boolean
+      last_reported_at:
+        type: string
+      last_x:
+        type: integer
+      last_y:
+        type: integer
+      name:
+        description: Optional.
+        type: string
+      position_history:
+        items:
+          $ref: '#/definitions/entity.Position'
+        type: array
+      started_at:
+        type: string
+      uid:
+        type: string
+    type: object
+  entity.Position:
+    properties:
+      created_at:
+        type: string
+      dgraph.type:
+        items:
+          type: string
+        type: array
+      passed_at:
+        type: string
+      uid:
+        type: string
+      x:
+        type: integer
+      "y":
+        type: integer
+    type: object
+  entity.Robot:
+    properties:
+      created_at:
+        type: string
+      dgraph.type:
+        items:
+          type: string
+        type: array
+      is_cleaning:
+        type: boolean
+      name:
+        description: Each robot should have a name to make identification easier and
+          reports nicer.
+        type: string
+      session:
+        items:
+          $ref: '#/definitions/entity.CleaningSession'
+        type: array
+      size:
+        description: The diameter of the robot in millimeters. We assume all robots
+          are have a circle shape.
+        type: integer
+      uid:
+        type: string
+    type: object
+  entity.Square:
+    properties:
+      cleaned_at:
+        type: string
+      created_at:
+        type: string
+      dgraph.type:
+        items:
+          type: string
+        type: array
+      has_robot_present:
+        description: Is the robot currently on the square?
+        type: boolean
+      order:
+        description: To ensure we can retrieve all grid squares in the order they
+          were created.
+        type: integer
+      passes:
+        type: integer
+      size:
+        type: integer
+      uid:
+        type: string
+      x:
+        type: integer
+      "y":
+        type: integer
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Robo Viewer API server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Robo Viewer API
+  version: "0.1"
+paths:
+  /v1/areas:
+    get:
+      consumes:
+      - application/json
+      description: List all areas.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.ListAreasResponseV1'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/cerr.ErrorResponse'
+      summary: List all areas.
+  /v1/robots:
+    get:
+      consumes:
+      - application/json
+      description: List all robots and their active cleaning session.
+      parameters:
+      - description: Robot ID to filter on
+        in: query
+        name: robot_id
+        type: string
+      - description: Robot name to filter on
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.ListRobotsResponseV1'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/cerr.ErrorResponse'
+      summary: List all robots and their active cleaning session.
+  /v1/robots/{robot_id}/history:
+    get:
+      consumes:
+      - application/json
+      description: Get all historical cleaning sessions for a robot.
+      parameters:
+      - description: Robot ID to show history for
+        in: path
+        name: robot_id
+        required: true
+        type: string
+      - description: 'Return only max latest number of cleaning sessions for robot
+          (default: 10)'
+        in: query
+        name: max
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.RobotHistoryResponseV1'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/cerr.ErrorResponse'
+      summary: Get all historical cleaning sessions for a robot.
+swagger: "2.0"

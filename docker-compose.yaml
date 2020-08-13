@@ -1,0 +1,56 @@
+version: "3.7"
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:1.6.8
+    restart: on-failure
+    hostname: mosquitto
+    ports:
+      - 1883:1883
+      - 9001:9001
+    networks:
+      - network
+
+  dg-zero-1:
+    image: dgraph/dgraph:v1.2.1
+    hostname: dg-zero-1
+    volumes:
+      - dg1-volume:/dgraph
+    ports:
+      - 5080:5080
+      - 6080:6080
+    restart: on-failure
+    command: dgraph zero --my=dg-zero-1:5080
+    networks:
+      - network
+
+  dg-alpha-1:
+    image: dgraph/dgraph:v1.2.1
+    hostname: dg-alpha-1
+    volumes:
+      - dg1-volume:/dgraph
+    ports:
+      - 8080:8080
+      - 9080:9080
+    restart: on-failure
+    command: dgraph alpha --my=dg-alpha-1:7080 --lru_mb=2048 --zero=dg-zero-1:5080
+    networks:
+      - network
+
+  ratel:
+    image: dgraph/dgraph:latest
+    ports:
+      - 8000:8000
+    command: dgraph-ratel
+    networks:
+      - network
+
+volumes:
+  dg1-volume:
+    external:
+      name: robo-dg1-volume
+
+networks:
+  network:
+    external:
+      name: robo-net
